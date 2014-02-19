@@ -1,0 +1,3 @@
+#!/bin/sh
+rmmod char_ps
+rm /dev/char_ps

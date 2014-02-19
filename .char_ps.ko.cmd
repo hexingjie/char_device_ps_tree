@@ -1,1 +1,1 @@
-cmd_/home/hxj/linux_kernel/char_ps_tree/char_ps.ko := ld -r -m elf_i386 -T /usr/src/linux-headers-3.8.0-19-generic/scripts/module-common.lds --build-id  -o /home/hxj/linux_kernel/char_ps_tree/char_ps.ko /home/hxj/linux_kernel/char_ps_tree/char_ps.o /home/hxj/linux_kernel/char_ps_tree/char_ps.mod.o
+cmd_/home/hxj/LKD/char_device_ps_tree/char_ps.ko := ld -r -m elf_i386 -T /usr/src/linux-2.6.35.9/scripts/module-common.lds --build-id -o /home/hxj/LKD/char_device_ps_tree/char_ps.ko /home/hxj/LKD/char_device_ps_tree/char_ps.o /home/hxj/LKD/char_device_ps_tree/char_ps.mod.o

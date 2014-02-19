@@ -1,0 +1,6 @@
+#!/bin/sh
+insmod char_ps.ko
+sleep 3
+mknod /dev/char_ps c 250 0
+sleep 3
+chmod a+w /dev/char_ps

@@ -15,6 +15,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/sched.h>
+#include <linux/pid.h>
 #include <linux/list.h>
 
 MODULE_LICENSE("Dual BSD/GPL");
@@ -22,9 +23,10 @@ MODULE_AUTHOR("He xingjie");
 
 #define BUFFER_SIZE 0x2000 /*缓冲区最大8KB*/
 #define CHAR_PS_MAJOR 250 /*char_ps的主设备号*/
-#define PROCESSTREE 0X01
-#define THREADGROUP 0x02
-#define MEMSTAT 0X03
+#define PROCESSTREE 0X01  /*打印进程树*/
+#define THREADGROUP 0x02  /**/
+#define MEMSTAT 0X03      /*打印进程的地址空间分布*/
+#define TEST_PID 4411  /*测试用的pid*/
 
 static int char_ps_major = CHAR_PS_MAJOR;
 
@@ -80,6 +82,54 @@ void ps_tree(struct task_struct *p, int blank)
 }
 
 
+/* 当用户程序输入memset [pid]时，将会调用该程序来
+ * 通过进程号pid来找到相应进程的task_struct，并打
+ * 打印出该进程的内存地址空间分布,如果输入的pid不存在，
+ * 则会打印当前进程的内存地址空间分布情况
+ * */
+
+void Memset(int pid, struct char_ps_dev *dev)
+{
+	struct task_struct *task;
+
+	task = pid_task(find_vpid(pid), PIDTYPE_PID);
+
+	printk("task->pid:%d\n", task->pid);
+	sprintf(tmp, "task->pid:%d\n", task->pid);
+	printk("current->pid:%d\n", current->pid);
+	strcat(dev->buff, tmp);
+	memset(tmp, 0, sizeof(tmp));
+
+	/*代码段的起止地址*/
+	printk("code_start:%ld\n", task->mm->start_code);
+	printk("code_end:%ld\n", task->mm->end_code);
+	sprintf(tmp, "code:%ld-%ld\n", task->mm->start_code, task->mm->end_code);
+	strcat(dev->buff, tmp);
+	memset(tmp, 0, sizeof(tmp));
+
+	/*数据段的起止地址*/
+	printk("data_start:%ld\n", task->mm->start_data);
+	printk("data_end:%ld\n", task->mm->end_data);
+	sprintf(tmp, "data:%ld-%ld\n", task->mm->start_data, task->mm->end_data);
+	strcat(dev->buff, tmp);
+	memset(tmp, 0, sizeof(tmp));
+
+	/*堆的起止地址*/
+	printk("heap_start:%ld\n", task->mm->start_brk);
+	printk("heap_end:%ld\n", task->mm->brk);
+	sprintf(tmp, "heap:%ld-%ld\n", task->mm->start_brk, task->mm->brk);
+	strcat(dev->buff, tmp);
+	memset(tmp, 0, sizeof(tmp));
+
+	/*栈的首地址*/
+	printk("stack_start:%ld\n", task->mm->start_stack);
+	sprintf(tmp, "stack_start:%ld\n", task->mm->start_stack);
+	strcat(dev->buff, tmp);
+	memset(tmp, 0, sizeof(tmp));
+
+}
+
+
 int char_ps_open(struct inode *inode, struct file *filp)
 {
 	/*将设备结构体指针赋值给文件私有数据指针*/
@@ -95,7 +145,7 @@ int char_ps_ioctl(struct file *filp,
 	/*获得设别结构体指针*/
 	struct char_ps_dev *dev = filp->private_data;
 
-	printk(KERN_INFO"ioctl receive cmd %d",cmd);
+	printk(KERN_INFO"ioctl receive cmd %d\n",cmd);
 
 	switch(cmd){
 		case PROCESSTREE:
@@ -137,9 +187,31 @@ int char_ps_ioctl(struct file *filp,
 			printk(KERN_INFO"Before break\n");
 
 		break;
-	default:
-		printk(KERN_ALERT"IOCTL_CMD_ERROR\n");
-		return - EINVAL;
+
+		case MEMSTAT:
+		{
+			unsigned long ulong;
+
+			/*将字符串转换成为unsigned long*/
+			ulong = simple_strtoul((const char *)arg, 0, 10);
+			printk("ulong:%ld\n", ulong);
+
+			Memset((unsigned int)ulong, dev);
+	
+			/*内核空间->用户空间*/
+			if (copy_to_user((char *) arg, dev->buff, strlen(dev->buff)) != 0)
+			{
+				printk("copyt_to_user failed!\n");
+				return -EFAULT;
+			}
+			break;
+		}
+
+		default:
+		{
+			printk(KERN_ALERT"IOCTL_CMD_ERROR\n");
+			return - EINVAL;
+		}
 	}
 
 	return 0;
@@ -198,6 +270,7 @@ static __init int char_ps_init(void)
 	char_ps_setup_cdev(char_ps_devp, 0);
 
 	printk(KERN_INFO"char_ps_init success!\n");
+
 	return 0;
 
 fail_malloc:

@@ -5,11 +5,12 @@
 #include <fcntl.h>
 
 #define PROCESSTREE 0X01
+#define MEMSTAT 0X03
 
 int main()
 {
 	int fd;
-	char buff[1024*4];
+	char buff[1024*8] = "4411";
 	int ret;
 
 	fd = open("/dev/char_ps",O_RDWR);
@@ -20,7 +21,7 @@ int main()
 	}
 	printf("fd:%d\n",fd);
 
-	ret = ioctl(fd, PROCESSTREE, buff);
+	ret = ioctl(fd, MEMSTAT, buff);
 	printf("ret:%d\n", ret);
 
 	printf("buff:%s\n", buff);
