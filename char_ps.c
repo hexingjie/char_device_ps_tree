@@ -81,6 +81,28 @@ void ps_tree(struct task_struct *p, int blank)
 	}
 }
 
+void ThreadGroup()
+{
+	struct task_struct *task, *p;
+	struct list_head *pos;
+
+	/*加锁(SMP)*/
+	//read_lock(&tasklist_lock);
+
+	for_each_process(task)
+	{
+		printk("Thread_group ID:%d\n", task->pid);
+		list_for_each(pos, &task->thread_group)
+		{
+			p = list_entry(pos, struct task_struct, thread_group);
+			printk("   thread ID:%d\n", p->pid);
+		}
+	}
+
+	/*解锁*/
+	//read_unlock(&tasklist_lock);
+}
+
 
 /* 当用户程序输入memset [pid]时，将会调用该程序来
  * 通过进程号pid来找到相应进程的task_struct，并打
@@ -270,6 +292,12 @@ static __init int char_ps_init(void)
 	char_ps_setup_cdev(char_ps_devp, 0);
 
 	printk(KERN_INFO"char_ps_init success!\n");
+
+
+	/************************************************/
+	ThreadGroup();
+	/************************************************/
+
 
 	return 0;
 
