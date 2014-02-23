@@ -177,7 +177,7 @@ int char_ps_ioctl(struct file *filp,
 			int count = 0;
 
 			printk(KERN_INFO"Before ps_tree\n");
-		    ps_tree(task, blank);
+			ps_tree(task, blank);
 			printk(KERN_INFO"After ps_tree\n");
 
 			printk(KERN_INFO"ARG:%x\n", arg);
@@ -190,25 +190,33 @@ int char_ps_ioctl(struct file *filp,
 				count = 4112;
 			}
 
-#if 0
 			/*内核空间->用户空间*/
 			if (copy_to_user((char *) arg, dev->buff, 40) != 0)
-				{
-					printk("copyt_to_user failed!\n");
-					return -EFAULT;
-				}
-#endif
+			{
+				printk("copyt_to_user failed!\n");
+				return -EFAULT;
+			}
+#if 0
 			/*内核空间->用户空间*/
 			if (copy_to_user((char *) arg, str, 5) != 0)
-				{
-					printk("copyt_to_user failed!\n");
-					return -EFAULT;
-				}
+			{
+				printk("copyt_to_user failed!\n");
+				return -EFAULT;
+			}
+#endif
+
 			}
 
 			printk(KERN_INFO"Before break\n");
 
 		break;
+		
+		case THREADGROUP:
+		{
+			Thread_group();
+			break;
+		}
+
 
 		case MEMSTAT:
 		{
@@ -220,7 +228,7 @@ int char_ps_ioctl(struct file *filp,
 
 			Memset((unsigned int)ulong, dev);
 	
-			/*内核空间->用户空间*/
+		 	/*内核空间->用户空间*/
 			if (copy_to_user((char *) arg, dev->buff, strlen(dev->buff)) != 0)
 			{
 				printk("copyt_to_user failed!\n");
@@ -292,12 +300,6 @@ static __init int char_ps_init(void)
 	char_ps_setup_cdev(char_ps_devp, 0);
 
 	printk(KERN_INFO"char_ps_init success!\n");
-
-
-	/************************************************/
-	ThreadGroup();
-	/************************************************/
-
 
 	return 0;
 
